@@ -1,0 +1,2845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Arushi AI Assistant</title>
+  <!-- Google Fonts: Plus Jakarta Sans & Google Sans style -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <style>
+    /* ============================================================
+       0. CSS VARIABLES & MATERIAL 3 DESIGN TOKENS
+       ============================================================ */
+    :root {
+      --bg-base: #090D16;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1F2937;
+      --bg-surface-glass: rgba(17, 24, 39, 0.82);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
+      
+      --text-primary: #F9FAFB;
+      --text-secondary: #9CA3AF;
+      --text-tertiary: #6B7280;
+      
+      --primary: #6366F1;
+      --primary-hover: #4F46E5;
+      --primary-container: rgba(99, 102, 241, 0.16);
+      --primary-glow: rgba(99, 102, 241, 0.35);
+      
+      --accent-cyan: #06B6D4;
+      --accent-emerald: #10B981;
+      --accent-amber: #F59E0B;
+      --accent-rose: #F43F5E;
+      
+      --card-radius: 20px;
+      --button-radius: 9999px;
+      --pill-radius: 12px;
+      
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      
+      --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    [data-theme="light"] {
+      --bg-base: #F8FAFC;
+      --bg-surface: #FFFFFF;
+      --bg-surface-elevated: #F1F5F9;
+      --bg-surface-glass: rgba(255, 255, 255, 0.88);
+      --border-subtle: rgba(0, 0, 0, 0.08);
+      --border-focus: rgba(79, 70, 229, 0.5);
+      
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-tertiary: #94A3B8;
+      
+      --primary: #4F46E5;
+      --primary-hover: #4338CA;
+      --primary-container: rgba(79, 70, 229, 0.1);
+      --primary-glow: rgba(79, 70, 229, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       1. APP LAYOUT CONTAINER (NATIVE ANDROID FEEL)
+       ============================================================ */
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      position: relative;
+      background: radial-gradient(circle at 50% 35%, rgba(99, 102, 241, 0.12) 0%, transparent 65%), var(--bg-base);
+      padding-top: calc(var(--safe-top) + 12px);
+      padding-bottom: calc(var(--safe-bottom) + 16px);
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+
+    /* Top App Bar */
+    .top-app-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      z-index: 20;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366F1, #06B6D4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFF;
+      box-shadow: 0 4px 14px var(--primary-glow);
+      font-size: 16px;
+    }
+
+    .brand-meta {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: var(--button-radius);
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.3s ease;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-tertiary);
+    }
+
+    .status-badge.connected .status-dot { background: var(--accent-emerald); box-shadow: 0 0 8px var(--accent-emerald); }
+    .status-badge.listening .status-dot { background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan); animation: pulse-dot 1.2s infinite; }
+    .status-badge.thinking .status-dot { background: var(--accent-amber); box-shadow: 0 0 8px var(--accent-amber); animation: pulse-dot 0.8s infinite; }
+    .status-badge.speaking .status-dot { background: var(--primary); box-shadow: 0 0 8px var(--primary); animation: pulse-dot 0.6s infinite; }
+    .status-badge.error .status-dot { background: var(--accent-rose); }
+
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.5; }
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(10px);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.92);
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+    }
+
+    /* Platform Indicator Banner & System Control Trigger */
+    .platform-pill {
+      align-self: center;
+      margin-top: 4px;
+      margin-bottom: 8px;
+      padding: 5px 14px;
+      border-radius: var(--button-radius);
+      font-size: 0.74rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-surface-glass);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .platform-pill:hover, .platform-pill:active {
+      transform: scale(0.98);
+      background: var(--bg-surface-elevated);
+      border-color: var(--accent-emerald);
+    }
+
+    .platform-pill i {
+      color: var(--accent-emerald);
+      font-size: 0.85rem;
+    }
+
+    .pill-action-badge {
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: #FFFFFF;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Flexibility & Permissions Control Cards */
+    .perm-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: border-color 0.2s ease;
+    }
+
+    .perm-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .perm-info {
+      flex: 1;
+    }
+
+    .perm-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .perm-desc {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+      line-height: 1.35;
+    }
+
+    .perm-action-btn {
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      padding: 7px 13px;
+      border-radius: 9px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .perm-action-btn.granted {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .perm-action-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* ============================================================
+       2. CENTER HERO: DYNAMIC VOICE ORB & VISUALIZER
+       ============================================================ */
+    .hero-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 240px;
+    }
+
+    .orb-wrapper {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .orb-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .orb-core {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #818CF8, #4F46E5 60%, #1E1B4B 100%);
+      box-shadow: 0 0 35px var(--primary-glow), inset 0 0 20px rgba(255, 255, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      z-index: 2;
+    }
+
+    .orb-core i {
+      font-size: 38px;
+      color: #FFFFFF;
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+    }
+
+    /* Orb States */
+    .orb-wrapper.listening .orb-core {
+      background: radial-gradient(circle at 35% 35%, #67E8F9, #06B6D4 60%, #0E7490 100%);
+      box-shadow: 0 0 45px rgba(6, 182, 212, 0.45), inset 0 0 20px rgba(255, 255, 255, 0.3);
+      transform: scale(1.06);
+    }
+
+    .orb-wrapper.thinking .orb-core {
+      background: radial-gradient(circle at 35% 35%, #FCD34D, #F59E0B 60%, #B45309 100%);
+      box-shadow: 0 0 45px rgba(245, 158, 11, 0.45);
+      animation: rotate-thinking 3s linear infinite;
+    }
+
+    .orb-wrapper.speaking .orb-core {
+      background: radial-gradient(circle at 35% 35%, #A78BFA, #6366F1 60%, #312E81 100%);
+      box-shadow: 0 0 55px rgba(99, 102, 241, 0.6);
+      transform: scale(1.08);
+    }
+
+    .orb-wrapper.executing .orb-core {
+      background: radial-gradient(circle at 35% 35%, #34D399, #10B981 60%, #065F46 100%);
+      box-shadow: 0 0 50px rgba(16, 185, 129, 0.5);
+    }
+
+    .orb-ripple {
+      position: absolute;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 1.5px solid var(--primary);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .orb-wrapper.speaking .orb-ripple-1 {
+      animation: ripple-anim 2.2s cubic-bezier(0.1, 0.2, 0.3, 1) infinite;
+    }
+    .orb-wrapper.speaking .orb-ripple-2 {
+      animation: ripple-anim 2.2s cubic-bezier(0.1, 0.2, 0.3, 1) 0.7s infinite;
+    }
+    .orb-wrapper.speaking .orb-ripple-3 {
+      animation: ripple-anim 2.2s cubic-bezier(0.1, 0.2, 0.3, 1) 1.4s infinite;
+    }
+
+    @keyframes ripple-anim {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    @keyframes rotate-thinking {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(180deg) scale(1.04); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    .orb-state-label {
+      margin-top: 18px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: -0.01em;
+      text-align: center;
+      transition: color 0.3s ease;
+    }
+
+    /* ============================================================
+       3. LIVE TRANSCRIPTION & TOOL ACTION CARDS
+       ============================================================ */
+    .interaction-card {
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--card-radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 190px;
+      overflow-y: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .transcript-bubble {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .bubble-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .bubble-avatar.user {
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+    }
+
+    .bubble-avatar.arushi {
+      background: linear-gradient(135deg, #6366F1, #06B6D4);
+      color: #FFF;
+    }
+
+    .bubble-content {
+      flex: 1;
+    }
+
+    .bubble-speaker {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-tertiary);
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .bubble-text {
+      font-size: 0.94rem;
+      color: var(--text-primary);
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .bubble-text.streaming::after {
+      content: '▋';
+      display: inline-block;
+      margin-left: 4px;
+      color: var(--accent-cyan);
+      animation: blink 0.8s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Real Tool Result Pill / Card */
+    .tool-result-banner {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--bg-surface-elevated);
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      animation: slide-up 0.3s ease;
+    }
+
+    .tool-result-banner.active {
+      display: flex;
+    }
+
+    .tool-icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .tool-icon-box.whatsapp { background: rgba(37, 211, 102, 0.18); color: #25D366; }
+    .tool-icon-box.call { background: rgba(59, 130, 246, 0.18); color: #3B82F6; }
+    .tool-icon-box.app { background: rgba(168, 85, 247, 0.18); color: #A855F7; }
+    .tool-icon-box.url { background: rgba(6, 182, 212, 0.18); color: #06B6D4; }
+
+    .tool-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tool-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tool-desc {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tool-status-icon {
+      font-size: 13px;
+    }
+    .tool-status-icon.success { color: var(--accent-emerald); }
+    .tool-status-icon.fail { color: var(--accent-rose); }
+
+    /* ============================================================
+       4. QUICK CHIPS (NATURAL MULTI-LANGUAGE SAMPLES)
+       ============================================================ */
+    .quick-chips-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 2px 10px 2px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .quick-chips-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip-btn {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      border-radius: var(--button-radius);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface-glass);
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .chip-btn:active {
+      transform: scale(0.95);
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border-color: var(--primary);
+    }
+
+    /* ============================================================
+       5. BOTTOM CONTROLS & VOICE BAR
+       ============================================================ */
+    .bottom-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .text-toggle-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .main-mic-fab {
+      flex: 1;
+      height: 54px;
+      border-radius: var(--button-radius);
+      border: none;
+      background: linear-gradient(135deg, var(--primary), #4338CA);
+      color: #FFFFFF;
+      font-family: var(--font-main);
+      font-size: 0.96rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px var(--primary-glow);
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .main-mic-fab:active {
+      transform: scale(0.97);
+    }
+
+    .main-mic-fab.active {
+      background: linear-gradient(135deg, #EF4444, #DC2626);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .main-mic-fab.speaking {
+      background: linear-gradient(135deg, #8B5CF6, #6366F1);
+    }
+
+    .stop-barge-in-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface-elevated);
+      color: var(--accent-rose);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+      opacity: 0.6;
+      transition: all 0.2s ease;
+    }
+
+    .stop-barge-in-btn.visible {
+      opacity: 1;
+      box-shadow: 0 0 12px rgba(244, 63, 94, 0.3);
+    }
+
+    /* Text Command Input Overlay Drawer */
+    .text-input-drawer {
+      display: none;
+      position: absolute;
+      bottom: calc(var(--safe-bottom) + 80px);
+      left: 18px;
+      right: 18px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-focus);
+      border-radius: 18px;
+      padding: 8px 12px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+      z-index: 30;
+      animation: slide-up 0.2s ease;
+    }
+
+    .text-input-drawer.active {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .text-input-drawer input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      font-size: 0.94rem;
+      outline: none;
+      padding: 6px;
+    }
+
+    .send-text-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #FFF;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* ============================================================
+       6. BOTTOM SHEETS & MODALS (CONTACT CLARIFICATION, SETTINGS, LOGS)
+       ============================================================ */
+    .sheet-scrim {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 99;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sheet-scrim.visible {
+      display: block;
+      opacity: 1;
+    }
+
+    .bottom-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 500px;
+      margin: 0 auto;
+      background: var(--bg-surface);
+      border-top-left-radius: 26px;
+      border-top-right-radius: 26px;
+      border-top: 1px solid var(--border-subtle);
+      padding: 16px 20px calc(var(--safe-bottom) + 20px) 20px;
+      z-index: 100;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .bottom-sheet.open {
+      transform: translateY(0);
+    }
+
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--border-subtle);
+      border-radius: 2px;
+      margin: 0 auto 16px auto;
+    }
+
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .sheet-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Contact Clarification List */
+    .contact-match-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--bg-surface-elevated);
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .contact-item:active {
+      border-color: var(--primary);
+      background: var(--primary-container);
+    }
+
+    .contact-meta {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .contact-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+
+    .contact-num {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* Settings Form */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    .helper-text {
+      font-size: 0.74rem;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+    }
+
+    /* Debug Console */
+    .log-box {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      background: #000000;
+      color: #34D399;
+      border-radius: 12px;
+      padding: 12px;
+      height: 260px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .log-line {
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+    .log-line.error { color: #F87171; }
+    .log-line.tool { color: #38BDF8; }
+    .log-line.audio { color: #FBBF24; }
+
+    @keyframes slide-up {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    
+    <!-- Top App Bar -->
+    <header class="top-app-bar">
+      <div class="brand-group">
+        <div class="brand-icon">
+          <i class="fa-solid fa-sparkles"></i>
+        </div>
+        <div class="brand-meta">
+          <span class="brand-title">Arushi <span style="font-size:0.72rem; color:var(--accent-cyan); font-weight:800; letter-spacing:0.04em;">V3 ENTERPRISE</span></span>
+          <div class="status-badge" id="statusBadge">
+            <span class="status-dot"></span>
+            <span id="statusText">Ready</span>
+          </div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="btnSetupCenter" onclick="openSetupCenterSheet()" title="Arushi Enterprise Setup Center">
+          <i class="fa-solid fa-shield-check" style="color:var(--accent-emerald);"></i>
+        </button>
+        <button class="icon-btn" id="btnDebug" title="Developer Debug Logs">
+          <i class="fa-solid fa-terminal"></i>
+        </button>
+        <button class="icon-btn" id="btnSettings" title="Settings">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Interactive Flexibility & System Permissions Pill -->
+    <div class="platform-pill" id="platformPill" onclick="openSetupCenterSheet()" title="Tap to open Arushi V3 Setup Center">
+      <i class="fa-solid fa-shield-halved" style="color:var(--accent-cyan);"></i>
+      <span id="platformLabel">ARUSHI V3 ENTERPRISE: <b>Setup Center</b></span>
+      <span class="pill-action-badge" id="pillSetupBadge">CHECK STATUS</span>
+    </div>
+
+    <!-- Center Voice Orb & Wave Stage -->
+    <main class="hero-stage">
+      <div class="orb-wrapper" id="voiceOrb" title="Tap to toggle Arushi Voice">
+        <div class="orb-ripple orb-ripple-1"></div>
+        <div class="orb-ripple orb-ripple-2"></div>
+        <div class="orb-ripple orb-ripple-3"></div>
+        <canvas class="orb-canvas" id="orbCanvas" width="220" height="220"></canvas>
+        <div class="orb-core">
+          <i class="fa-solid fa-microphone-lines" id="orbIcon"></i>
+        </div>
+      </div>
+      <div class="orb-state-label" id="orbStateLabel">Tap to talk with Arushi</div>
+    </main>
+
+    <!-- Active Tool Execution Banner -->
+    <div class="tool-result-banner" id="toolBanner">
+      <div class="tool-icon-box" id="toolIconBox">
+        <i class="fa-solid fa-bolt" id="toolIcon"></i>
+      </div>
+      <div class="tool-info">
+        <div class="tool-title" id="toolTitle">Executing Device Action</div>
+        <div class="tool-desc" id="toolDesc">Validating request...</div>
+      </div>
+      <i class="fa-solid fa-circle-check tool-status-icon success" id="toolStatusIcon"></i>
+    </div>
+
+    <!-- Live Interaction & Transcript Bubble Card -->
+    <section class="interaction-card" id="interactionCard">
+      <!-- User speech bubble -->
+      <div class="transcript-bubble" id="userBubble" style="display: none;">
+        <div class="bubble-avatar user">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="bubble-content">
+          <div class="bubble-speaker">You</div>
+          <div class="bubble-text" id="userText">...</div>
+        </div>
+      </div>
+      <!-- Arushi voice response bubble -->
+      <div class="transcript-bubble" id="arushiBubble">
+        <div class="bubble-avatar arushi">
+          <i class="fa-solid fa-sparkles"></i>
+        </div>
+        <div class="bubble-content">
+          <div class="bubble-speaker">Arushi</div>
+          <div class="bubble-text" id="arushiText">Namaste! Main Arushi hoon. Aap mujhse Hindi, English, Hinglish, Gujarati ya kisi bhi bhasha mein baat kar sakte hain.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Natural Language Prompt Chips -->
+    <div class="quick-chips-bar">
+      <button class="chip-btn" onclick="triggerQuickPrompt('Hello Arushi')">
+        <i class="fa-solid fa-sparkles" style="color:var(--accent-cyan);"></i> Hello Arushi
+      </button>
+      <button class="chip-btn" onclick="triggerQuickPrompt('whatsapp ખોલો')">
+        <i class="fa-brands fa-whatsapp" style="color:#25D366;"></i> whatsapp ખોલો
+      </button>
+      <button class="chip-btn" onclick="triggerQuickPrompt('YouTube open karo')">
+        <i class="fa-brands fa-youtube" style="color:#EF4444;"></i> YouTube open karo
+      </button>
+      <button class="chip-btn" onclick="triggerQuickPrompt('flashlight on karo')">
+        <i class="fa-solid fa-flashlight" style="color:#F59E0B;"></i> Flashlight On
+      </button>
+      <button class="chip-btn" onclick="triggerQuickPrompt('flashlight off karo')">
+        <i class="fa-solid fa-power-off" style="color:#94A3B8;"></i> Flashlight Off
+      </button>
+      <button class="chip-btn" onclick="triggerQuickPrompt('back')">
+        <i class="fa-solid fa-arrow-left" style="color:#38BDF8;"></i> Back
+      </button>
+      <button class="chip-btn" onclick="triggerQuickPrompt('home')">
+        <i class="fa-solid fa-house" style="color:#10B981;"></i> Home
+      </button>
+      <button class="chip-btn" onclick="triggerQuickPrompt('recent apps')">
+        <i class="fa-solid fa-table-cells-large" style="color:#818CF8;"></i> Recent Apps
+      </button>
+      <button class="chip-btn" onclick="triggerQuickPrompt('volume up')">
+        <i class="fa-solid fa-volume-high" style="color:#A78BFA;"></i> Volume Up
+      </button>
+      <button class="chip-btn" onclick="triggerQuickPrompt('મારી વાઇફને કોલ કરો')">
+        <i class="fa-solid fa-phone" style="color:#38BDF8;"></i> મારી વાઇફને કોલ કરો
+      </button>
+      <button class="chip-btn" onclick="triggerQuickPrompt('YouTube par Taarak Mehta search karo')">
+        <i class="fa-brands fa-youtube" style="color:#EF4444;"></i> Search YouTube
+      </button>
+      <button class="chip-btn" onclick="openSetupCenterSheet()">
+        <i class="fa-solid fa-shield-halved" style="color:#10B981;"></i> Setup Center
+      </button>
+    </div>
+
+    <!-- Text Command Drawer (Muted / Fallback) -->
+    <div class="text-input-drawer" id="textDrawer">
+      <input type="text" id="textPromptInput" placeholder="Type a request (e.g. Call to my wife, WhatsApp message)...">
+      <button class="send-text-btn" id="btnSendText" title="Send">
+        <i class="fa-solid fa-arrow-up"></i>
+      </button>
+    </div>
+
+    <!-- Bottom Controls Footer -->
+    <footer class="bottom-controls">
+      <button class="text-toggle-btn" id="btnToggleKeyboard" title="Type instead">
+        <i class="fa-solid fa-keyboard"></i>
+      </button>
+      
+      <button class="main-mic-fab" id="btnMainMic">
+        <i class="fa-solid fa-microphone"></i>
+        <span id="micFabLabel">Start Voice</span>
+      </button>
+
+      <button class="stop-barge-in-btn" id="btnBargeIn" title="Interrupt Arushi">
+        <i class="fa-solid fa-hand"></i>
+      </button>
+    </footer>
+
+  </div>
+
+  <!-- Sheet Scrim Overlay -->
+  <div class="sheet-scrim" id="sheetScrim"></div>
+
+  <!-- Contact Clarification Bottom Sheet -->
+  <div class="bottom-sheet" id="contactSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">
+        <i class="fa-solid fa-address-book" style="color:var(--primary);"></i>
+        <span>Multiple Contacts Found</span>
+      </div>
+      <button class="icon-btn" onclick="closeSheets()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:12px;">
+      Which contact would you like to call?
+    </p>
+    <div class="contact-match-list" id="contactList">
+      <!-- Dynamic contact items -->
+    </div>
+  </div>
+
+  <!-- ARUSHI V3 ENTERPRISE Setup Center Bottom Sheet -->
+  <div class="bottom-sheet" id="setupCenterSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">
+        <i class="fa-solid fa-shield-halved" style="color:var(--accent-cyan);"></i>
+        <span>ARUSHI V3 ENTERPRISE Setup Center</span>
+      </div>
+      <button class="icon-btn" onclick="closeSheets()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div id="setupSummaryBanner" style="padding:12px 14px; border-radius:12px; margin-bottom:14px; background:rgba(16, 185, 129, 0.12); border:1px solid rgba(16, 185, 129, 0.3); display:flex; align-items:center; gap:10px;">
+      <i class="fa-solid fa-circle-check" id="setupSummaryIcon" style="color:var(--accent-emerald); font-size:18px;"></i>
+      <div style="flex:1;">
+        <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary);" id="setupSummaryTitle">ARUSHI SETUP STATUS</div>
+        <div style="font-size:0.75rem; color:var(--text-secondary);" id="setupSummarySubtitle">Checking system services & background voice readiness...</div>
+      </div>
+      <button class="perm-action-btn" onclick="refreshSetupStatus()" style="padding:5px 9px; font-size:0.72rem;">
+        <i class="fa-solid fa-arrows-rotate"></i>
+      </button>
+    </div>
+
+    <!-- 1. Background Voice Service -->
+    <div class="perm-card">
+      <div class="perm-info">
+        <div class="perm-title">
+          <i class="fa-solid fa-tower-broadcast" style="color:var(--accent-cyan);"></i>
+          <span>Background Voice Service</span>
+        </div>
+        <div class="perm-desc">Android Foreground Service for background "Hello Arushi" readiness</div>
+      </div>
+      <button class="perm-action-btn" id="btnServiceToggle" onclick="toggleBackgroundService()">
+        <i class="fa-solid fa-play"></i> Start Service
+      </button>
+    </div>
+
+    <!-- 2. Accessibility Service (Global Phone Control) -->
+    <div class="perm-card">
+      <div class="perm-info">
+        <div class="perm-title">
+          <i class="fa-solid fa-universal-access" style="color:var(--accent-emerald);"></i>
+          <span>Accessibility Service (Phone Control)</span>
+        </div>
+        <div class="perm-desc">Required for global Back, Home, Recent apps, and system navigation</div>
+      </div>
+      <button class="perm-action-btn" id="btnSetupAccessibility" onclick="openAccessibilitySettingsNative()">
+        <i class="fa-solid fa-gear"></i> Configure
+      </button>
+    </div>
+
+    <!-- 3. Wake Word Engine -->
+    <div class="perm-card">
+      <div class="perm-info">
+        <div class="perm-title">
+          <i class="fa-solid fa-sparkles" style="color:var(--accent-amber);"></i>
+          <span>Wake Word ("Hello Arushi")</span>
+        </div>
+        <div class="perm-desc">Continuous speech listener for instant wake phrase recognition</div>
+      </div>
+      <div class="perm-action-btn granted" id="badgeWakeWord">
+        <i class="fa-solid fa-check"></i> Ready
+      </div>
+    </div>
+
+    <!-- 4. Microphone Permission -->
+    <div class="perm-card">
+      <div class="perm-info">
+        <div class="perm-title">
+          <i class="fa-solid fa-microphone" style="color:var(--accent-rose);"></i>
+          <span>Microphone (RECORD_AUDIO)</span>
+        </div>
+        <div class="perm-desc">Voice input for real-time speech and Gemini Live audio streaming</div>
+      </div>
+      <button class="perm-action-btn" id="btnSetupMic" onclick="requestNativeAudioPermission()">
+        <i class="fa-solid fa-microphone"></i> Grant
+      </button>
+    </div>
+
+    <!-- 5. Notifications -->
+    <div class="perm-card">
+      <div class="perm-info">
+        <div class="perm-title">
+          <i class="fa-solid fa-bell" style="color:var(--primary);"></i>
+          <span>Notifications (Foreground Indicator)</span>
+        </div>
+        <div class="perm-desc">Keeps background listener active without Android OS killing it</div>
+      </div>
+      <button class="perm-action-btn" id="btnSetupNotification" onclick="requestNativeNotificationPermission()">
+        <i class="fa-solid fa-bell"></i> Enable
+      </button>
+    </div>
+
+    <!-- 6. Battery Optimization Exemption -->
+    <div class="perm-card">
+      <div class="perm-info">
+        <div class="perm-title">
+          <i class="fa-solid fa-battery-three-quarters" style="color:var(--accent-emerald);"></i>
+          <span>Battery Optimization (Doze Exemption)</span>
+        </div>
+        <div class="perm-desc">Prevent Android Doze mode from sleeping Arushi in background</div>
+      </div>
+      <button class="perm-action-btn" id="btnSetupBattery" onclick="openBatterySettingsNative()">
+        <i class="fa-solid fa-bolt"></i> Set Unrestricted
+      </button>
+    </div>
+
+    <!-- 7. Direct Calling & Contacts -->
+    <div class="perm-card">
+      <div class="perm-info">
+        <div class="perm-title">
+          <i class="fa-solid fa-address-book" style="color:var(--accent-cyan);"></i>
+          <span>Direct Phone Calling & Contacts</span>
+        </div>
+        <div class="perm-desc">Instant calling for Wife, Mom, Friends without confirmation delays</div>
+      </div>
+      <button class="perm-action-btn" id="btnSetupPhone" onclick="requestAllNativePermissions()">
+        <i class="fa-solid fa-check-double"></i> Grant All
+      </button>
+    </div>
+
+    <!-- 8. Gemini Live Engine -->
+    <div class="perm-card">
+      <div class="perm-info">
+        <div class="perm-title">
+          <i class="fa-solid fa-brain" style="color:var(--accent-indigo);"></i>
+          <span>Gemini Live WebSocket Engine</span>
+        </div>
+        <div class="perm-desc">Server-side Gemini 2.5 Flash Native Audio preview</div>
+      </div>
+      <div class="perm-action-btn granted" id="badgeGemini">
+        <i class="fa-solid fa-check"></i> Connected
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated Flexibility & Phone Control Bottom Sheet (Alias to Setup Center) -->
+  <div class="bottom-sheet" id="flexibilitySheet" style="display:none;"></div>
+
+  <!-- Settings Bottom Sheet -->
+  <div class="bottom-sheet" id="settingsSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">
+        <i class="fa-solid fa-sliders" style="color:var(--primary);"></i>
+        <span>Arushi Settings</span>
+      </div>
+      <button class="icon-btn" onclick="closeSheets()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">Gemini API Key</label>
+      <input type="password" class="form-input" id="apiKeyInput" placeholder="AIzaSy... (leave blank to use auto-injected)">
+      <div class="helper-text" id="apiKeyHelper">Keys configured in AI Studio are auto-detected via native BuildConfig.</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Model Endpoint</label>
+      <select class="form-select" id="modelSelect">
+        <option value="models/gemini-2.5-flash-native-audio-preview-12-2025" selected>Gemini 2.5 Flash Native Audio (Fastest Voice)</option>
+        <option value="models/gemini-2.0-flash">Gemini 2.0 Flash Live</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Voice Tone</label>
+      <select class="form-select" id="voiceSelect">
+        <option value="Aoede" selected>Aoede (Warm & Conversational)</option>
+        <option value="Kore">Kore (Clear & Direct)</option>
+        <option value="Fenrir">Fenrir (Authoritative)</option>
+        <option value="Puck">Puck (Playful)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Language Mode</label>
+      <select class="form-select" id="languageSelect">
+        <option value="auto" selected>Auto Detect (Hindi, English, Hinglish, etc.)</option>
+        <option value="hi">Hindi Primary</option>
+        <option value="en">English Primary</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Theme</label>
+      <select class="form-select" id="themeSelect">
+        <option value="dark" selected>Dark Theme</option>
+        <option value="light">Light Theme</option>
+      </select>
+    </div>
+
+    <!-- Flexibility & Phone Control Inside Settings -->
+    <div style="margin-top: 18px; margin-bottom: 12px;">
+      <div style="font-size: 0.88rem; font-weight: 700; color: var(--accent-emerald); display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
+        <i class="fa-solid fa-sliders"></i> Flexibility & Phone Control (सिस्टम कंट्रोल)
+      </div>
+
+      <div class="perm-card">
+        <div class="perm-info">
+          <div class="perm-title"><i class="fa-solid fa-universal-access" style="color:var(--accent-cyan);"></i> Flexibility / Accessibility</div>
+          <div class="perm-desc">Android सेटिंग्स में जाकर Accessibility ऑन करें</div>
+        </div>
+        <button class="perm-action-btn" onclick="openNativeSettings('accessibility')">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> ऑन करें
+        </button>
+      </div>
+
+      <div class="perm-card">
+        <div class="perm-info">
+          <div class="perm-title"><i class="fa-solid fa-phone" style="color:var(--accent-emerald);"></i> Direct Calling</div>
+          <div class="perm-desc">बिना डायल पैड के सीधे कॉल लगाने की परमिशन</div>
+        </div>
+        <button class="perm-action-btn" id="btnSettingsPermCall" onclick="requestNativeCallPermission()">
+          <i class="fa-solid fa-phone"></i> ऑन करें
+        </button>
+      </div>
+
+      <div class="perm-card">
+        <div class="perm-info">
+          <div class="perm-title"><i class="fa-solid fa-address-book" style="color:var(--accent-amber);"></i> Contacts & WhatsApp</div>
+          <div class="perm-desc">पत्नी और अन्य परिजनों को मैसेज/कॉल के लिए</div>
+        </div>
+        <button class="perm-action-btn" id="btnSettingsPermContacts" onclick="requestNativeContactsPermission()">
+          <i class="fa-solid fa-address-book"></i> ऑन करें
+        </button>
+      </div>
+
+      <div class="perm-card">
+        <div class="perm-info">
+          <div class="perm-title"><i class="fa-solid fa-gear" style="color:var(--primary);"></i> Device App Info</div>
+          <div class="perm-desc">डिवाइस सेटिंग्स में जाकर सभी परमिशन्स चेक करें</div>
+        </div>
+        <button class="perm-action-btn" onclick="openNativeSettings('app')">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> सेटिंग्स खोलें
+        </button>
+      </div>
+    </div>
+
+    <button class="main-mic-fab" style="width:100%; height:46px; margin-top:12px;" onclick="saveSettings()">
+      <i class="fa-solid fa-check"></i> Save Settings
+    </button>
+  </div>
+
+  <!-- Developer Debug Logs Sheet -->
+  <div class="bottom-sheet" id="debugSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">
+        <i class="fa-solid fa-code" style="color:var(--accent-cyan);"></i>
+        <span>Developer Diagnostics</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="icon-btn" onclick="clearDebugLogs()"><i class="fa-solid fa-trash"></i></button>
+        <button class="icon-btn" onclick="closeSheets()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div class="log-box" id="logBox">
+[SYSTEM] Arushi diagnostics console initialized.
+    </div>
+  </div>
+
+  <!-- ============================================================
+       APPLICATION LOGIC & AUDIO ENGINE
+       ============================================================ -->
+  <script>
+    /* ============================================================
+       A. CONFIGURATION & CONSTANTS
+       ============================================================ */
+    const CONFIG = {
+      DEFAULT_MODEL: "models/gemini-2.5-flash-native-audio-preview-12-2025",
+      WS_ENDPOINT: "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent",
+      INPUT_SAMPLE_RATE: 16000,
+      OUTPUT_SAMPLE_RATE: 24000,
+      ALLOWED_APPS: ["whatsapp", "youtube", "instagram", "chrome", "google chrome", "settings", "maps", "google maps", "phone", "dialer", "messages", "sms"]
+    };
+
+    /* ============================================================
+       B. APPLICATION STATE
+       ============================================================ */
+    const STATE = {
+      status: 'disconnected', // 'disconnected', 'connecting', 'connected', 'listening', 'thinking', 'speaking', 'executing', 'error'
+      isNativeApp: false,
+      apiKey: '',
+      ws: null,
+      audioCtx: null,
+      micStream: null,
+      scriptProcessor: null,
+      analyser: null,
+      scheduledSources: [],
+      isPlaying: false,
+      nextPlayTime: 0,
+      sessionActive: false,
+      userSpeaking: false,
+      activeTool: null,
+      currentPrompt: '',
+      permissions: {
+        audio: false,
+        contacts: false,
+        call: false
+      }
+    };
+
+    /* ============================================================
+       C. DOM REFERENCES
+       ============================================================ */
+    const DOM = {
+      statusBadge: document.getElementById('statusBadge'),
+      statusText: document.getElementById('statusText'),
+      platformPill: document.getElementById('platformPill'),
+      platformLabel: document.getElementById('platformLabel'),
+      voiceOrb: document.getElementById('voiceOrb'),
+      orbIcon: document.getElementById('orbIcon'),
+      orbStateLabel: document.getElementById('orbStateLabel'),
+      orbCanvas: document.getElementById('orbCanvas'),
+      toolBanner: document.getElementById('toolBanner'),
+      toolIconBox: document.getElementById('toolIconBox'),
+      toolIcon: document.getElementById('toolIcon'),
+      toolTitle: document.getElementById('toolTitle'),
+      toolDesc: document.getElementById('toolDesc'),
+      toolStatusIcon: document.getElementById('toolStatusIcon'),
+      userBubble: document.getElementById('userBubble'),
+      userText: document.getElementById('userText'),
+      arushiBubble: document.getElementById('arushiBubble'),
+      arushiText: document.getElementById('arushiText'),
+      btnMainMic: document.getElementById('btnMainMic'),
+      micFabLabel: document.getElementById('micFabLabel'),
+      btnBargeIn: document.getElementById('btnBargeIn'),
+      btnToggleKeyboard: document.getElementById('btnToggleKeyboard'),
+      textDrawer: document.getElementById('textDrawer'),
+      textPromptInput: document.getElementById('textPromptInput'),
+      btnSendText: document.getElementById('btnSendText'),
+      sheetScrim: document.getElementById('sheetScrim'),
+      settingsSheet: document.getElementById('settingsSheet'),
+      flexibilitySheet: document.getElementById('flexibilitySheet'),
+      debugSheet: document.getElementById('debugSheet'),
+      contactSheet: document.getElementById('contactSheet'),
+      contactList: document.getElementById('contactList'),
+      apiKeyInput: document.getElementById('apiKeyInput'),
+      modelSelect: document.getElementById('modelSelect'),
+      voiceSelect: document.getElementById('voiceSelect'),
+      languageSelect: document.getElementById('languageSelect'),
+      themeSelect: document.getElementById('themeSelect'),
+      logBox: document.getElementById('logBox'),
+      btnSettings: document.getElementById('btnSettings'),
+      btnDebug: document.getElementById('btnDebug')
+    };
+
+    /* ============================================================
+       D. DEBUG LOGGER
+       ============================================================ */
+    function log(msg, type = 'info') {
+      const time = new Date().toTimeString().split(' ')[0];
+      const entry = document.createElement('div');
+      entry.className = `log-line ${type}`;
+      entry.textContent = `[${time}] ${msg}`;
+      DOM.logBox.appendChild(entry);
+      DOM.logBox.scrollTop = DOM.logBox.scrollHeight;
+      console.log(`[Arushi] ${msg}`);
+    }
+
+    function clearDebugLogs() {
+      DOM.logBox.innerHTML = '';
+      log('Logs cleared.');
+    }
+
+    /* ============================================================
+       E. PLATFORM CAPABILITY DETECTION & NATIVE PERMISSIONS
+       ============================================================ */
+    function detectPlatformCapabilities() {
+      const hasAndroidBridge = typeof window.AndroidBridge !== 'undefined' || typeof window.Android !== 'undefined';
+      const bridge = window.AndroidBridge || window.Android;
+      STATE.isNativeApp = Boolean(hasAndroidBridge);
+
+      if (STATE.isNativeApp) {
+        log('Android Native Bridge detected.', 'tool');
+        DOM.platformLabel.innerHTML = '<strong>Native Android APK</strong> (Full Device Control Ready)';
+        DOM.platformPill.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+
+        // Attempt to check current permission status
+        try {
+          if (bridge.getPermissionsStatus) {
+            const permStatus = JSON.parse(bridge.getPermissionsStatus());
+            updatePermissionsUI(permStatus.audio, permStatus.contacts, permStatus.call);
+          }
+        } catch (e) {
+          log('Permission status check: ' + e.message);
+        }
+
+        // Attempt to auto-fetch API key from native BuildConfig
+        try {
+          const nativeKey = bridge.getApiKey();
+          if (nativeKey && nativeKey.length > 5) {
+            STATE.apiKey = nativeKey;
+            DOM.apiKeyInput.value = nativeKey;
+            document.getElementById('apiKeyHelper').textContent = 'Configured via Android BuildConfig.';
+            log('Acquired API key from Android BuildConfig.');
+          }
+        } catch (e) {
+          log('Error fetching key from native bridge: ' + e.message, 'error');
+        }
+      } else {
+        log('Browser Mode active. Native actions will use deep-link fallbacks.', 'info');
+        DOM.platformLabel.innerHTML = '<strong>Browser Mode</strong> (Tap to Configure Settings)';
+      }
+
+      // Check localStorage for saved key
+      const storedKey = localStorage.getItem('arushi_gemini_api_key');
+      if (storedKey && !STATE.apiKey) {
+        STATE.apiKey = storedKey;
+        DOM.apiKeyInput.value = storedKey;
+      }
+    }
+
+    function openSetupCenterSheet() {
+      const sheet = document.getElementById('setupCenterSheet');
+      if (sheet) {
+        openSheet(sheet);
+        refreshSetupStatus();
+      }
+    }
+
+    function openFlexibilitySheet() {
+      openSetupCenterSheet();
+    }
+
+    function refreshSetupStatus() {
+      const bridge = window.AndroidBridge || window.Android;
+      if (!bridge) {
+        updateSetupSummaryUI(false, "Browser Mode: Native services require Android APK.");
+        return;
+      }
+
+      try {
+        let statusObj = null;
+        if (bridge.getSetupStatus) {
+          statusObj = JSON.parse(bridge.getSetupStatus());
+        }
+
+        const isRunning = bridge.isArushiServiceRunning ? bridge.isArushiServiceRunning() : false;
+        const btnService = document.getElementById('btnServiceToggle');
+        if (btnService) {
+          if (isRunning) {
+            btnService.className = 'perm-action-btn granted';
+            btnService.innerHTML = '<i class="fa-solid fa-stop"></i> Stop Service';
+          } else {
+            btnService.className = 'perm-action-btn';
+            btnService.innerHTML = '<i class="fa-solid fa-play"></i> Start Service';
+          }
+        }
+
+        const isAcc = bridge.getAccessibilityStatus ? bridge.getAccessibilityStatus() : false;
+        const btnAcc = document.getElementById('btnSetupAccessibility');
+        if (btnAcc) {
+          if (isAcc) {
+            btnAcc.className = 'perm-action-btn granted';
+            btnAcc.innerHTML = '<i class="fa-solid fa-check"></i> Enabled';
+          } else {
+            btnAcc.className = 'perm-action-btn';
+            btnAcc.innerHTML = '<i class="fa-solid fa-gear"></i> Configure';
+          }
+        }
+
+        if (bridge.getPermissionsStatus) {
+          const permStatus = JSON.parse(bridge.getPermissionsStatus());
+          updatePermissionsUI(permStatus.audio, permStatus.contacts, permStatus.call);
+
+          const btnMic = document.getElementById('btnSetupMic');
+          if (btnMic && permStatus.audio) {
+            btnMic.className = 'perm-action-btn granted';
+            btnMic.innerHTML = '<i class="fa-solid fa-check"></i> Granted';
+          }
+
+          const btnPhone = document.getElementById('btnSetupPhone');
+          if (btnPhone && permStatus.call && permStatus.contacts) {
+            btnPhone.className = 'perm-action-btn granted';
+            btnPhone.innerHTML = '<i class="fa-solid fa-check"></i> Granted';
+          }
+        }
+
+        const isReady = isRunning && isAcc;
+        if (isReady) {
+          updateSetupSummaryUI(true, "All background voice & system controls active.");
+        } else {
+          updateSetupSummaryUI(false, "Enable Background Service & Accessibility for full voice control.");
+        }
+      } catch (e) {
+        log('Setup status refresh error: ' + e.message, 'error');
+      }
+    }
+
+    function updateSetupSummaryUI(complete, subtitle) {
+      const titleEl = document.getElementById('setupSummaryTitle');
+      const subEl = document.getElementById('setupSummarySubtitle');
+      const iconEl = document.getElementById('setupSummaryIcon');
+      const banner = document.getElementById('setupSummaryBanner');
+      const pillBadge = document.getElementById('pillSetupBadge');
+
+      if (complete) {
+        if (titleEl) titleEl.textContent = "ARUSHI SETUP COMPLETE";
+        if (subEl) subEl.textContent = subtitle || "All enterprise services active.";
+        if (iconEl) { iconEl.className = "fa-solid fa-circle-check"; iconEl.style.color = "var(--accent-emerald)"; }
+        if (banner) { banner.style.background = "rgba(16, 185, 129, 0.15)"; banner.style.borderColor = "rgba(16, 185, 129, 0.4)"; }
+        if (pillBadge) { pillBadge.textContent = "READY"; pillBadge.style.background = "rgba(16, 185, 129, 0.2)"; pillBadge.style.color = "var(--accent-emerald)"; }
+      } else {
+        if (titleEl) titleEl.textContent = "ARUSHI SETUP READY";
+        if (subEl) subEl.textContent = subtitle || "Tap components below to enable full phone control.";
+        if (iconEl) { iconEl.className = "fa-solid fa-triangle-exclamation"; iconEl.style.color = "var(--accent-amber)"; }
+        if (banner) { banner.style.background = "rgba(245, 158, 11, 0.12)"; banner.style.borderColor = "rgba(245, 158, 11, 0.35)"; }
+        if (pillBadge) { pillBadge.textContent = "CHECK"; }
+      }
+    }
+
+    function toggleBackgroundService() {
+      const bridge = window.AndroidBridge || window.Android;
+      if (!bridge) {
+        alert("Background service is available when running inside the Android APK.");
+        return;
+      }
+      const isRunning = bridge.isArushiServiceRunning ? bridge.isArushiServiceRunning() : false;
+      if (isRunning) {
+        if (bridge.stopArushiService) bridge.stopArushiService();
+      } else {
+        if (bridge.startArushiService) bridge.startArushiService();
+      }
+      setTimeout(refreshSetupStatus, 600);
+    }
+
+    function openAccessibilitySettingsNative() {
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.openAccessibilitySettings) {
+        bridge.openAccessibilitySettings();
+      } else if (bridge?.openSettings) {
+        bridge.openSettings('accessibility');
+      } else {
+        alert("Accessibility settings available inside the Android APK.");
+      }
+    }
+
+    function openBatterySettingsNative() {
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.openBatterySettings) {
+        bridge.openBatterySettings();
+      } else {
+        alert("Battery optimization settings available inside the Android APK.");
+      }
+    }
+
+    function requestNativeNotificationPermission() {
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.requestNotificationPermission) {
+        bridge.requestNotificationPermission();
+      }
+    }
+
+    function speakLocalResponse(text) {
+      if (!text || typeof window.speechSynthesis === 'undefined') return;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.05;
+        utterance.pitch = 1.05;
+        // Match language if possible
+        if (/[\u0A80-\u0AFF]/.test(text)) {
+          utterance.lang = 'gu-IN';
+        } else if (/[\u0900-\u097F]/.test(text)) {
+          utterance.lang = 'hi-IN';
+        } else {
+          utterance.lang = 'en-IN';
+        }
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn('Speech synthesis error: ' + e.message);
+      }
+    }
+
+    window.onWakeWordFromService = function(phrase) {
+      log(`Wake word detected from service: "${phrase}"`, 'tool');
+      DOM.userBubble.style.display = 'flex';
+      DOM.userText.textContent = phrase || "Hello Arushi";
+      
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.executeFastCommand) {
+        try {
+          const fastResult = JSON.parse(bridge.executeFastCommand(phrase));
+          if (fastResult.handled) {
+            DOM.arushiBubble.style.display = 'flex';
+            DOM.arushiText.textContent = fastResult.spokenReply || fastResult.details;
+            speakLocalResponse(fastResult.spokenReply);
+            showToolBanner(fastResult.action, { appName: fastResult.action });
+            updateToolBannerResult({ success: fastResult.success, message: fastResult.details });
+            return;
+          }
+        } catch (e) {
+          log('Wake word fast command check: ' + e.message);
+        }
+      }
+
+      // Default wake response
+      DOM.arushiBubble.style.display = 'flex';
+      DOM.arushiText.textContent = "Ji Sir, boliye. Main sun rahi hoon.";
+      speakLocalResponse("Ji Sir, boliye. Main sun rahi hoon.");
+      
+      // Auto-connect to voice if not already connected
+      if (!STATE.sessionActive) {
+        setTimeout(() => connectGeminiLive(), 600);
+      }
+    };
+
+    function openNativeSettings(type) {
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.openSettings) {
+        bridge.openSettings(type);
+      } else {
+        alert('Opening system settings is available when running inside the Android APK.');
+      }
+    }
+
+    function requestNativeCallPermission() {
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.requestCallPermission) {
+        bridge.requestCallPermission();
+      } else {
+        alert('Direct calling permission is managed in Android settings.');
+      }
+    }
+
+    function requestNativeContactsPermission() {
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.requestContactsPermission) {
+        bridge.requestContactsPermission();
+      } else {
+        alert('Contacts permission is managed in Android settings.');
+      }
+    }
+
+    function requestNativeAudioPermission() {
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.requestAudioPermission) {
+        bridge.requestAudioPermission();
+      } else {
+        navigator.mediaDevices?.getUserMedia({ audio: true });
+      }
+    }
+
+    function requestAllNativePermissions() {
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.requestAllPermissions) {
+        bridge.requestAllPermissions();
+      } else {
+        alert('Native permissions are available in Android APK.');
+      }
+    }
+
+    function updatePermissionsUI(audio, contacts, call) {
+      STATE.permissions.audio = audio;
+      STATE.permissions.contacts = contacts;
+      STATE.permissions.call = call;
+
+      const btnCall = document.getElementById('btnSheetPermCall');
+      const btnCall2 = document.getElementById('btnSettingsPermCall');
+      if (call) {
+        if (btnCall) { btnCall.className = 'perm-action-btn granted'; btnCall.innerHTML = '<i class="fa-solid fa-check"></i> चालू है (Granted)'; }
+        if (btnCall2) { btnCall2.className = 'perm-action-btn granted'; btnCall2.innerHTML = '<i class="fa-solid fa-check"></i> चालू है (Granted)'; }
+      }
+
+      const btnCont = document.getElementById('btnSheetPermContacts');
+      const btnCont2 = document.getElementById('btnSettingsPermContacts');
+      if (contacts) {
+        if (btnCont) { btnCont.className = 'perm-action-btn granted'; btnCont.innerHTML = '<i class="fa-solid fa-check"></i> चालू है (Granted)'; }
+        if (btnCont2) { btnCont2.className = 'perm-action-btn granted'; btnCont2.innerHTML = '<i class="fa-solid fa-check"></i> चालू है (Granted)'; }
+      }
+
+      const btnMic = document.getElementById('btnSheetPermMic');
+      if (audio && btnMic) {
+        btnMic.className = 'perm-action-btn granted';
+        btnMic.innerHTML = '<i class="fa-solid fa-check"></i> चालू है (Granted)';
+      }
+    }
+
+    window.onNativePermissionsUpdated = function(audio, contacts, call) {
+      log(`Native permissions updated: audio=${audio}, contacts=${contacts}, call=${call}`);
+      updatePermissionsUI(audio, contacts, call);
+    };
+
+    /* ============================================================
+       F. VISUAL CANVAS & ORB ANIMATION
+       ============================================================ */
+    const canvas = DOM.orbCanvas;
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    let animFrameId = null;
+    let waveOffset = 0;
+
+    function renderOrbVisualizer() {
+      if (!ctx || !canvas) return;
+      if (document.hidden) {
+        animFrameId = null;
+        return;
+      }
+
+      try {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const radius = 70;
+
+        let volume = 0;
+        if (STATE.analyser && (STATE.status === 'listening' || STATE.status === 'speaking')) {
+          const freqData = new Uint8Array(STATE.analyser.frequencyBinCount);
+          STATE.analyser.getByteFrequencyData(freqData);
+          let sum = 0;
+          for (let i = 0; i < 32; i++) sum += freqData[i];
+          volume = sum / 32 / 255;
+        }
+
+        waveOffset += 0.05 + volume * 0.1;
+
+        // Draw subtle orbital rings
+        const numRings = STATE.status === 'speaking' ? 4 : 2;
+        for (let r = 0; r < numRings; r++) {
+          ctx.beginPath();
+          const currentRadius = radius + 8 + r * 14 + Math.sin(waveOffset + r) * (6 + volume * 25);
+          ctx.arc(cx, cy, Math.max(10, currentRadius), 0, Math.PI * 2);
+          
+          let strokeColor;
+          if (STATE.status === 'speaking') {
+            strokeColor = `rgba(99, 102, 241, ${0.45 - r * 0.09})`;
+          } else if (STATE.status === 'listening') {
+            strokeColor = `rgba(6, 182, 212, ${0.4 - r * 0.1})`;
+          } else if (STATE.status === 'thinking') {
+            strokeColor = `rgba(245, 158, 11, ${0.35 - r * 0.08})`;
+          } else {
+            strokeColor = `rgba(255, 255, 255, 0.06)`;
+          }
+          
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = 1.8;
+          ctx.stroke();
+        }
+      } catch (err) {
+        // Suppress rendering interruptions
+      }
+
+      animFrameId = requestAnimationFrame(renderOrbVisualizer);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && !animFrameId) {
+        renderOrbVisualizer();
+      }
+    });
+
+    renderOrbVisualizer();
+
+    /* ============================================================
+       G. AUDIO ENGINE: PCM STREAMING & PLAYBACK
+       ============================================================ */
+    async function initAudioEngine() {
+      if (!STATE.audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        STATE.audioCtx = new AudioContextClass({ sampleRate: CONFIG.OUTPUT_SAMPLE_RATE });
+        STATE.analyser = STATE.audioCtx.createAnalyser();
+        STATE.analyser.fftSize = 128;
+      }
+      if (STATE.audioCtx.state === 'suspended') {
+        await STATE.audioCtx.resume();
+      }
+    }
+
+    // Convert Float32Array to 16-bit Int16 PCM Little-Endian
+    function floatTo16BitPCM(float32Array) {
+      const buffer = new ArrayBuffer(float32Array.length * 2);
+      const view = new DataView(buffer);
+      for (let i = 0; i < float32Array.length; i++) {
+        let s = Math.max(-1, Math.min(1, float32Array[i]));
+        view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      }
+      return buffer;
+    }
+
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return window.btoa(binary);
+    }
+
+    // Decode raw Int16 PCM base64 from Gemini into Web Audio AudioBuffer
+    function base64ToAudioBuffer(base64Data, sampleRate = CONFIG.OUTPUT_SAMPLE_RATE) {
+      const binaryString = window.atob(base64Data);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const dataView = new DataView(bytes.buffer);
+      const numSamples = len / 2;
+      const audioBuffer = STATE.audioCtx.createBuffer(1, numSamples, sampleRate);
+      const channelData = audioBuffer.getChannelData(0);
+      for (let i = 0; i < numSamples; i++) {
+        const int16 = dataView.getInt16(i * 2, true);
+        channelData[i] = int16 / 32768.0;
+      }
+      return audioBuffer;
+    }
+
+    function queueAudioChunk(audioBuffer) {
+      if (!STATE.audioCtx) return;
+
+      const currentTime = STATE.audioCtx.currentTime;
+      // If playback has fallen behind or is starting fresh, establish a 60ms jitter buffer
+      if (STATE.nextPlayTime < currentTime) {
+        STATE.nextPlayTime = currentTime + 0.06;
+      }
+
+      const source = STATE.audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(STATE.analyser);
+      STATE.analyser.connect(STATE.audioCtx.destination);
+
+      const startTime = STATE.nextPlayTime;
+      try {
+        source.start(startTime);
+        STATE.nextPlayTime = startTime + audioBuffer.duration;
+        STATE.scheduledSources.push(source);
+        STATE.isPlaying = true;
+        updateUIState('speaking');
+        DOM.btnBargeIn.classList.add('visible');
+
+        source.onended = () => {
+          const idx = STATE.scheduledSources.indexOf(source);
+          if (idx !== -1) {
+            STATE.scheduledSources.splice(idx, 1);
+          }
+          if (STATE.scheduledSources.length === 0 && (!STATE.audioCtx || STATE.audioCtx.currentTime >= STATE.nextPlayTime - 0.05)) {
+            STATE.isPlaying = false;
+            STATE.lastPlayEndedTimestamp = Date.now();
+            DOM.btnBargeIn.classList.remove('visible');
+            if (STATE.sessionActive && STATE.status === 'speaking') {
+              updateUIState('listening');
+            }
+          }
+        };
+      } catch (e) {
+        log('Error scheduling audio chunk: ' + e.message, 'error');
+      }
+    }
+
+    // Barge-in / Interruption: cancel current speech playback immediately
+    function stopAndClearAudioQueue(reason = 'interruption') {
+      log(`Barge-in triggered (${reason}): clearing audio queue.`, 'audio');
+      for (const s of STATE.scheduledSources) {
+        try {
+          s.stop();
+          s.disconnect();
+        } catch (e) {}
+      }
+      STATE.scheduledSources = [];
+      STATE.isPlaying = false;
+      STATE.lastPlayEndedTimestamp = Date.now();
+      if (STATE.audioCtx) {
+        STATE.nextPlayTime = STATE.audioCtx.currentTime;
+      }
+      DOM.btnBargeIn.classList.remove('visible');
+      if (STATE.sessionActive) {
+        updateUIState('listening');
+      }
+    }
+
+    /* ============================================================
+       H. MICROPHONE STREAMING (WITH ANTI-ECHO SELF-INTERRUPTION GUARD)
+       ============================================================ */
+    async function startMicrophone() {
+      try {
+        await initAudioEngine();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: CONFIG.INPUT_SAMPLE_RATE,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+        STATE.micStream = stream;
+
+        const micSource = STATE.audioCtx.createMediaStreamSource(stream);
+        // Using ScriptProcessor with 2048 buffer size (~128ms packets for lowest voice latency)
+        const processor = STATE.audioCtx.createScriptProcessor(2048, 1, 1);
+        STATE.scriptProcessor = processor;
+
+        processor.onaudioprocess = (e) => {
+          if (!STATE.sessionActive || !STATE.ws || STATE.ws.readyState !== WebSocket.OPEN) return;
+
+          const inputData = e.inputBuffer.getChannelData(0);
+          
+          let sum = 0;
+          for (let i = 0; i < inputData.length; i++) {
+            sum += Math.abs(inputData[i]);
+          }
+          const avgLevel = sum / inputData.length;
+
+          // Anti-Echo & Self-Interruption Guard:
+          // When Arushi is playing voice through the phone speaker, microphone captures the speaker output.
+          // We MUST suppress sending mic packets to Gemini while assistant is speaking, otherwise
+          // Gemini hears its own echo, detects voice activity, and aborts turn (serverContent.interrupted)!
+          const now = Date.now();
+          const isAssistantSpeaking = STATE.isPlaying || (now - (STATE.lastPlayEndedTimestamp || 0) < 250);
+
+          if (isAssistantSpeaking) {
+            // Only trigger barge-in if user speaks very loudly / intentionally over the phone speaker
+            if (avgLevel > 0.35) {
+              log('Loud user voice detected over speaker, triggering barge-in.', 'audio');
+              stopAndClearAudioQueue('loud user barge-in');
+            } else {
+              // Gate mic: ignore speaker bleed and do NOT stream to Gemini Live
+              return;
+            }
+          }
+
+          // User is speaking: send audio chunks to Gemini Live
+          const pcmBuffer = floatTo16BitPCM(inputData);
+          const base64Pcm = arrayBufferToBase64(pcmBuffer);
+
+          const clientMsg = {
+            realtimeInput: {
+              mediaChunks: [
+                {
+                  mimeType: `audio/pcm;rate=${CONFIG.INPUT_SAMPLE_RATE}`,
+                  data: base64Pcm
+                }
+              ]
+            }
+          };
+          STATE.ws.send(JSON.stringify(clientMsg));
+        };
+
+        // Mute mic output from leaking into speaker/feedback loop
+        const muteGain = STATE.audioCtx.createGain();
+        muteGain.gain.value = 0;
+        micSource.connect(processor);
+        processor.connect(muteGain);
+        muteGain.connect(STATE.audioCtx.destination);
+
+        log('Microphone input streaming active (16kHz PCM, feedback muted).', 'audio');
+        return true;
+      } catch (err) {
+        log('Microphone access failed: ' + err.message, 'error');
+        alert('Microphone permission is required for voice conversation with Arushi. Please enable microphone permissions in your browser or Android settings.');
+        updateUIState('error');
+        return false;
+      }
+    }
+
+    function stopMicrophone() {
+      if (STATE.scriptProcessor) {
+        STATE.scriptProcessor.disconnect();
+        STATE.scriptProcessor = null;
+      }
+      if (STATE.micStream) {
+        STATE.micStream.getTracks().forEach(t => t.stop());
+        STATE.micStream = null;
+      }
+      log('Microphone stream closed.', 'audio');
+    }
+
+    /* ============================================================
+       I. GEMINI LIVE TOOL DEFINITIONS & SAFE VALIDATION
+       ============================================================ */
+    const GEMINI_TOOLS = [
+      {
+        functionDeclarations: [
+          {
+            name: "sendWhatsAppMessage",
+            description: "Send a message to a person, contact, or relationship (e.g. wife, mom, Rahul, or Gujarati 'મારી વાઇફ', 'પત્ની') or a phone number on WhatsApp.",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                recipient: {
+                  type: "STRING",
+                  description: "Name, relation (e.g., 'wife', 'wife❤️', 'mom', 'Rahul', 'પત્ની', 'વાઇફ'), or phone number of the recipient"
+                },
+                message: {
+                  type: "STRING",
+                  description: "The text message content to send"
+                }
+              },
+              required: ["recipient", "message"]
+            }
+          },
+          {
+            name: "openWhatsApp",
+            description: "Directly open WhatsApp application or chat. Use whenever user says 'whatsapp open karo', 'open whatsapp', 'whatsapp ખોલો', 'વોટ્સએપ ખોલો', 'વોટ્સએપ ચાલુ કરો', 'whatsapp kholo', or similar in any language.",
+            parameters: {
+              type: "OBJECT",
+              properties: {}
+            }
+          },
+          {
+            name: "callContact",
+            description: "Directly call a contact or person by their name or relation (e.g. wife, my wife, mom, Rahul, papa, or in Gujarati 'વાઇફ', 'પત્ની', 'મમ્મી', 'પપ્પા') from the phone's address book without dial pad confirmation",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                contactName: {
+                  type: "STRING",
+                  description: "The name or relation of the contact (e.g. wife, mom, papa, Rahul, વાઇફ, મમ્મી)"
+                }
+              },
+              required: ["contactName"]
+            }
+          },
+          {
+            name: "makeCall",
+            description: "Directly call a phone number",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                phoneNumber: {
+                  type: "STRING",
+                  description: "The phone number to call"
+                }
+              },
+              required: ["phoneNumber"]
+            }
+          },
+          {
+            name: "openApp",
+            description: "Open any mobile application on the user's phone in any language (e.g., WhatsApp, YouTube, Instagram, Camera, Chrome, Settings, Maps, Phone, Messages, or in Gujarati 'whatsapp ખોલો', 'કેમેરા', 'યૂટ્યુબ', 'સેટિંગ')",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                appName: {
+                  type: "STRING",
+                  description: "Name of the app to launch (e.g. 'whatsapp', 'youtube', 'camera', 'instagram', 'settings')"
+                }
+              },
+              required: ["appName"]
+            }
+          },
+          {
+            name: "openSettings",
+            description: "Open device settings or accessibility/flexibility settings",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                settingType: {
+                  type: "STRING",
+                  description: "Type of settings: 'accessibility', 'flexibility', 'app', 'wifi', 'bluetooth', 'general'"
+                }
+              }
+            }
+          },
+          {
+            name: "goBack",
+            description: "Simulate pressing the back button on the phone",
+            parameters: {
+              type: "OBJECT",
+              properties: {}
+            }
+          },
+          {
+            name: "goHome",
+            description: "Navigate to the phone home screen",
+            parameters: {
+              type: "OBJECT",
+              properties: {}
+            }
+          },
+          {
+            name: "openUrl",
+            description: "Open an approved safe web URL in the browser",
+            parameters: {
+              type: "OBJECT",
+              properties: {
+                url: {
+                  type: "STRING",
+                  description: "The complete web URL starting with https://"
+                }
+              },
+              required: ["url"]
+            }
+          }
+        ]
+      }
+    ];
+
+    async function executeValidatedTool(name, args) {
+      log(`Validating and executing tool: ${name} with args: ${JSON.stringify(args)}`, 'tool');
+      updateUIState('executing');
+      showToolBanner(name, args);
+
+      const bridge = window.AndroidBridge || window.Android;
+      let result = { success: false, tool: name };
+
+      try {
+        switch (name) {
+          case 'sendWhatsAppMessage': {
+            const recipient = (args.recipient || '').trim();
+            const message = (args.message || '').trim();
+            if (!message) {
+              result = { success: false, tool: name, error: 'Message text cannot be empty.' };
+              break;
+            }
+
+            if (STATE.isNativeApp && bridge?.sendWhatsAppMessage) {
+              const resStr = bridge.sendWhatsAppMessage(recipient, message);
+              result = JSON.parse(resStr);
+            } else {
+              // Web fallback
+              const encoded = encodeURIComponent(message);
+              const url = recipient ? `https://api.whatsapp.com/send?phone=${encodeURIComponent(recipient)}&text=${encoded}` : `https://api.whatsapp.com/send?text=${encoded}`;
+              window.open(url, '_blank');
+              result = { success: true, tool: 'sendWhatsAppMessage', message: `WhatsApp chat opened for '${recipient}' with message: '${message}'` };
+            }
+            break;
+          }
+
+          case 'openWhatsApp': {
+            if (STATE.isNativeApp && bridge?.openWhatsApp) {
+              const resStr = bridge.openWhatsApp();
+              result = JSON.parse(resStr);
+            } else {
+              window.open('https://api.whatsapp.com/send', '_blank');
+              result = { success: true, tool: 'openWhatsApp', message: 'WhatsApp opened' };
+            }
+            break;
+          }
+
+          case 'callContact': {
+            const contactName = (args.contactName || '').trim();
+            if (!contactName) {
+              result = { success: false, tool: 'callContact', error: 'Contact name cannot be empty.' };
+              break;
+            }
+
+            if (STATE.isNativeApp && bridge?.callContact) {
+              const resStr = bridge.callContact(contactName);
+              result = JSON.parse(resStr);
+              
+              if (result.clarificationNeeded && result.matches) {
+                showContactClarificationSheet(result.matches);
+              }
+            } else {
+              result = {
+                success: false,
+                tool: 'callContact',
+                error: 'Searching device contacts is only supported when running the Arushi Android APK with Contacts permission enabled.'
+              };
+            }
+            break;
+          }
+
+          case 'makeCall': {
+            const phone = (args.phoneNumber || '').trim();
+            if (!phone || phone.replace(/[^0-9+]/g, '').length < 3) {
+              result = { success: false, tool: 'makeCall', error: 'Invalid phone number.' };
+              break;
+            }
+            if (STATE.isNativeApp && bridge?.makeCall) {
+              const resStr = bridge.makeCall(phone);
+              result = JSON.parse(resStr);
+            } else {
+              window.location.href = `tel:${phone.replace(/[^0-9+]/g, '')}`;
+              result = { success: true, tool: 'makeCall', message: `Phone dialer opened for ${phone}` };
+            }
+            break;
+          }
+
+          case 'openApp': {
+            const rawApp = args.appName || '';
+            const appClean = rawApp.trim().toLowerCase();
+
+            if (STATE.isNativeApp && bridge?.openApp) {
+              const resStr = bridge.openApp(rawApp);
+              result = JSON.parse(resStr);
+            } else {
+              if (appClean.includes('youtube')) {
+                window.open('https://www.youtube.com', '_blank');
+                result = { success: true, tool: 'openApp', message: 'YouTube opened' };
+              } else if (appClean.includes('instagram')) {
+                window.open('https://www.instagram.com', '_blank');
+                result = { success: true, tool: 'openApp', message: 'Instagram opened' };
+              } else if (appClean.includes('maps')) {
+                window.open('https://maps.google.com', '_blank');
+                result = { success: true, tool: 'openApp', message: 'Google Maps opened' };
+              } else if (appClean.includes('whatsapp')) {
+                window.open('https://api.whatsapp.com/send', '_blank');
+                result = { success: true, tool: 'openApp', message: 'WhatsApp opened' };
+              } else {
+                result = {
+                  success: false,
+                  tool: 'openApp',
+                  error: `Opening native app '${rawApp}' requires running inside the Arushi Android APK.`
+                };
+              }
+            }
+            break;
+          }
+
+          case 'openSettings': {
+            const settingType = args.settingType || 'flexibility';
+            if (STATE.isNativeApp && bridge?.openSettings) {
+              const resStr = bridge.openSettings(settingType);
+              result = JSON.parse(resStr);
+            } else {
+              openFlexibilitySheet();
+              result = { success: true, tool: 'openSettings', message: 'Flexibility settings opened in app.' };
+            }
+            break;
+          }
+
+          case 'goBack': {
+            if (STATE.isNativeApp && bridge?.goBack) {
+              const resStr = bridge.goBack();
+              result = JSON.parse(resStr);
+            } else {
+              window.history.back();
+              result = { success: true, tool: 'goBack', message: 'Back navigation requested' };
+            }
+            break;
+          }
+
+          case 'goHome': {
+            if (STATE.isNativeApp && bridge?.goHome) {
+              const resStr = bridge.goHome();
+              result = JSON.parse(resStr);
+            } else {
+              result = { success: false, tool: 'goHome', error: 'Home navigation requires running inside the Android APK.' };
+            }
+            break;
+          }
+
+          case 'openUrl': {
+            const url = (args.url || '').trim();
+            if (!url.startsWith('https://') && !url.startsWith('http://') && !url.startsWith('tel:') && !url.startsWith('whatsapp:')) {
+              result = { success: false, tool: 'openUrl', error: 'Only safe protocols (https, tel, whatsapp) are allowed.' };
+              break;
+            }
+            if (STATE.isNativeApp && bridge?.openUrl) {
+              const resStr = bridge.openUrl(url);
+              result = JSON.parse(resStr);
+            } else {
+              window.open(url, '_blank');
+              result = { success: true, tool: 'openUrl', message: `Opened URL: ${url}` };
+            }
+            break;
+          }
+
+          default:
+            result = { success: false, tool: name, error: `Unknown tool '${name}' rejected.` };
+        }
+      } catch (err) {
+        result = { success: false, tool: name, error: 'Execution error: ' + err.message };
+      }
+
+      updateToolBannerResult(result);
+      log(`Tool result: ${JSON.stringify(result)}`, result.success ? 'tool' : 'error');
+      return result;
+    }
+
+    function showToolBanner(name, args) {
+      DOM.toolBanner.classList.add('active');
+      DOM.toolIconBox.className = 'tool-icon-box';
+      if (name.includes('WhatsApp')) {
+        DOM.toolIconBox.classList.add('whatsapp');
+        DOM.toolIcon.className = 'fa-brands fa-whatsapp';
+        DOM.toolTitle.textContent = name === 'sendWhatsAppMessage' ? `WhatsApp Message to ${args.recipient || ''}` : 'Opening WhatsApp';
+      } else if (name.includes('Call') || name.includes('makeCall')) {
+        DOM.toolIconBox.classList.add('call');
+        DOM.toolIcon.className = 'fa-solid fa-phone';
+        DOM.toolTitle.textContent = `Direct Call: ${args.contactName || args.phoneNumber || ''}`;
+      } else if (name.includes('Settings')) {
+        DOM.toolIconBox.classList.add('app');
+        DOM.toolIcon.className = 'fa-solid fa-sliders';
+        DOM.toolTitle.textContent = 'Opening Settings';
+      } else if (name.includes('App')) {
+        DOM.toolIconBox.classList.add('app');
+        DOM.toolIcon.className = 'fa-solid fa-mobile-screen-button';
+        DOM.toolTitle.textContent = `Launching ${args.appName || 'Application'}`;
+      } else {
+        DOM.toolIconBox.classList.add('url');
+        DOM.toolIcon.className = 'fa-solid fa-arrow-up-right-from-square';
+        DOM.toolTitle.textContent = 'Executing Action';
+      }
+      DOM.toolDesc.textContent = 'Processing and executing command...';
+      DOM.toolStatusIcon.className = 'fa-solid fa-spinner fa-spin tool-status-icon';
+    }
+
+    function updateToolBannerResult(res) {
+      if (res.success) {
+        DOM.toolStatusIcon.className = 'fa-solid fa-circle-check tool-status-icon success';
+        DOM.toolDesc.textContent = res.message || 'Action executed successfully';
+      } else {
+        DOM.toolStatusIcon.className = 'fa-solid fa-circle-xmark tool-status-icon fail';
+        DOM.toolDesc.textContent = res.error || 'Action could not be completed';
+      }
+      setTimeout(() => {
+        DOM.toolBanner.classList.remove('active');
+      }, 5000);
+    }
+
+    function showContactClarificationSheet(matches) {
+      DOM.contactList.innerHTML = '';
+      matches.forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'contact-item';
+        item.innerHTML = `
+          <div class="contact-meta">
+            <span class="contact-name">${m.name}</span>
+            <span class="contact-num">${m.number}</span>
+          </div>
+          <i class="fa-solid fa-phone" style="color:var(--accent-emerald);"></i>
+        `;
+        item.onclick = () => {
+          closeSheets();
+          executeValidatedTool('makeCall', { phoneNumber: m.number });
+        };
+        DOM.contactList.appendChild(item);
+      });
+      openSheet(DOM.contactSheet);
+    }
+
+    /* ============================================================
+       J. GEMINI LIVE WEBSOCKET CONNECTION PIPELINE
+       ============================================================ */
+    function getSystemInstructionText() {
+      return `You are Arushi, an ultra-responsive, warm, and highly capable Indian AI voice assistant with deep Android device integration.
+You have direct native capabilities to perform real device actions through function calling:
+- sendWhatsAppMessage: Send a WhatsApp message to any contact, relationship (e.g. 'wife', 'wife❤️', 'mom', 'Rahul', 'પત્ની', 'વાઇફ'), or phone number.
+- openWhatsApp: Open the WhatsApp application.
+- callContact: Directly call a contact by name or relation (e.g. 'wife', 'mom', 'Rahul', 'papa', 'વાઇફ', 'પત્ની', 'મમ્મી', 'પપ્પા') from the phone's address book without dial pad confirmation.
+- makeCall: Directly call a specific phone number.
+- openApp: Launch any app installed on the device (WhatsApp, YouTube, Instagram, Camera, Chrome, Settings, Maps, Phone, Messages, etc., in English, Hindi, or Gujarati e.g. 'whatsapp ખોલો', 'કેમેરા', 'યૂટ્યુબ').
+- openSettings: Open accessibility, flexibility, or app settings.
+- goBack: Navigate back on screen.
+- goHome: Go to device home screen.
+- openUrl: Open safe web URLs.
+
+CRITICAL CONVERSATIONAL & MULTILINGUAL RULES:
+1. FULL MULTILINGUAL & CODE-MIXING SUPPORT (HINDI, GUJARATI, HINGLISH, GUJLISH, ENGLISH):
+   - You natively and fluently understand Hindi, Gujarati (ગુજરાતી), English, Hinglish, and mixed languages.
+   - You seamlessly handle code-mixing when users speak half-Hindi, half-English, half-Gujarati (e.g. "whatsapp ખોલો please", "mari wife ko message send karo", "aaje weather kaisa che", "setting kholo na", "call my mummy", "aap kaisa cho").
+   - Match the user's spoken language and tone naturally:
+     * If user speaks Gujarati (or Gujarati-English mix): respond in warm, natural Gujarati or Gujlish (e.g., "હા, હું વોટ્સએપ ખોલી રહી છું" / "હા, તમારી વાઇફને કોલ લગાવી રહી છું").
+     * If user speaks Hinglish: respond in friendly, modern Hinglish (e.g., "Ji, main WhatsApp open kar rahi hoon").
+     * If user speaks Hindi: respond in polite, warm Hindi.
+     * If user speaks English: respond in clear, fluent English.
+2. DIRECT PHONE ACTIONS ACROSS ALL LANGUAGES:
+   - "whatsapp ખોલો", "વોટ્સએપ ખોલો", "વોટ્સએપ ચાલુ કરો", "open whatsapp", "whatsapp kholo" -> acknowledge and immediately call openWhatsApp!
+   - "મારી વાઇફને કોલ કરો", "mari wife ne call karo", "call my wife", "wife ko call lagao", "meri patni ko call karo" -> speak a brief confirmation ("Ji, aapki wife ko call laga rahi hoon" / "હા, તમારી વાઇફને કોલ કરું છું") and immediately call callContact with contactName='wife'!
+   - "મારી મમ્મીને કોલ કરો", "mari mummy ne call lagavo", "call mom", "mummy ko call lagao" -> immediately call callContact with contactName='mom'!
+   - "Open WhatsApp and send my wife message to hello", "mari wife ne whatsapp message moklo hello", "meri wife ko whatsapp par message bhejo hello" -> call sendWhatsAppMessage with recipient='wife', message='hello'!
+   - "યૂટ્યુબ ખોલો", "youtube ચાલુ કરો", "open youtube", "youtube open karo" -> call openApp with appName='youtube'!
+   - "કેમેરા ખોલો", "open camera", "camera kholo" -> call openApp with appName='camera'!
+   - "સેટિંગ ખોલો", "open settings", "phone setting kholo" -> call openSettings!
+3. FAST & NATURAL SPOKEN RESPONSES:
+   - You respond directly via real-time voice. Do NOT hesitate, delay, or output long monologues. Reply in 1-2 short, warm, and natural conversational sentences. Never use markdown asterisks, bullet points, emojis, or code blocks in voice mode.
+4. REAL OUTCOMES ONLY:
+   - When the tool completes execution, speak the actual result naturally in the user's language. Never claim an action succeeded if it failed.
+5. INSTANT BARGE-IN:
+   - If the user speaks or interrupts, halt current playback immediately and listen attentively.`;
+    }
+
+    async function connectGeminiLive() {
+      const apiKey = STATE.apiKey || DOM.apiKeyInput.value.trim();
+      if (!apiKey) {
+        alert('Please configure your Gemini API Key in Settings to connect with Gemini Live.');
+        openSheet(DOM.settingsSheet);
+        return;
+      }
+
+      updateUIState('connecting');
+      log('Initiating Gemini Multimodal Live WebSocket connection...', 'info');
+
+      try {
+        const model = DOM.modelSelect.value || CONFIG.DEFAULT_MODEL;
+        const voiceName = DOM.voiceSelect.value || 'Aoede';
+        const url = `${CONFIG.WS_ENDPOINT}?key=${apiKey}`;
+        
+        const ws = new WebSocket(url);
+        STATE.ws = ws;
+
+        ws.onopen = async () => {
+          log('WebSocket connected. Sending initial setup payload...', 'tool');
+
+          const setupMessage = {
+            setup: {
+              model: model,
+              generationConfig: {
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                  voiceConfig: {
+                    prebuiltVoiceConfig: {
+                      voiceName: voiceName
+                    }
+                  }
+                }
+              },
+              systemInstruction: {
+                parts: [
+                  { text: getSystemInstructionText() }
+                ]
+              },
+              tools: GEMINI_TOOLS
+            }
+          };
+
+          ws.send(JSON.stringify(setupMessage));
+          log('Setup packet dispatched. Initializing microphone...', 'info');
+
+          const micOk = await startMicrophone();
+          if (micOk) {
+            STATE.sessionActive = true;
+            updateUIState('listening');
+          } else {
+            disconnectGeminiLive();
+          }
+        };
+
+        ws.onmessage = async (event) => {
+          try {
+            let data;
+            if (event.data instanceof Blob) {
+              const text = await event.data.text();
+              data = JSON.parse(text);
+            } else {
+              data = JSON.parse(event.data);
+            }
+
+            handleGeminiLiveMessage(data);
+          } catch (e) {
+            log('Error parsing WS message: ' + e.message, 'error');
+          }
+        };
+
+        ws.onerror = (err) => {
+          log('WebSocket error encountered.', 'error');
+          updateUIState('error');
+        };
+
+        ws.onclose = (e) => {
+          log(`WebSocket disconnected (code: ${e.code}, reason: ${e.reason || 'Normal'}).`, 'info');
+          cleanupSession();
+        };
+
+      } catch (err) {
+        log('Connection failure: ' + err.message, 'error');
+        updateUIState('error');
+      }
+    }
+
+    async function handleGeminiLiveMessage(data) {
+      // 1. Check for barge-in / interruption signal
+      if (data.serverContent?.interrupted) {
+        log('Gemini Live sent interruption signal.', 'audio');
+        stopAndClearAudioQueue('serverContent.interrupted');
+        updateUIState('listening');
+        return;
+      }
+
+      // 2. Process model turn audio & text
+      if (data.serverContent?.modelTurn?.parts) {
+        const parts = data.serverContent.modelTurn.parts;
+        for (const part of parts) {
+          // Streaming text/transcript
+          if (part.text) {
+            DOM.arushiBubble.style.display = 'flex';
+            DOM.arushiText.textContent = part.text;
+          }
+          // Real Gemini Live generated PCM audio chunk
+          if (part.inlineData && part.inlineData.mimeType.startsWith('audio/pcm')) {
+            const pcmBase64 = part.inlineData.data;
+            const audioBuffer = base64ToAudioBuffer(pcmBase64, CONFIG.OUTPUT_SAMPLE_RATE);
+            queueAudioChunk(audioBuffer);
+          }
+        }
+      }
+
+      // 3. Process Gemini Live Tool Calls
+      if (data.toolCall?.functionCalls) {
+        const calls = data.toolCall.functionCalls;
+        const responses = [];
+
+        for (const call of calls) {
+          log(`Gemini requested tool call: ${call.name}`, 'tool');
+          const result = await executeValidatedTool(call.name, call.args || {});
+          responses.push({
+            id: call.id,
+            response: {
+              output: result
+            }
+          });
+        }
+
+        // Send toolResponse back to Gemini Live
+        if (STATE.ws && STATE.ws.readyState === WebSocket.OPEN) {
+          const toolResponseMsg = {
+            toolResponse: {
+              functionResponses: responses
+            }
+          };
+          STATE.ws.send(JSON.stringify(toolResponseMsg));
+          log('Dispatched toolResponse to Gemini Live.', 'tool');
+          updateUIState('thinking');
+        }
+      }
+    }
+
+    function disconnectGeminiLive() {
+      log('Disconnecting Arushi Live session...', 'info');
+      cleanupSession();
+      if (STATE.ws) {
+        STATE.ws.close();
+        STATE.ws = null;
+      }
+    }
+
+    function cleanupSession() {
+      STATE.sessionActive = false;
+      stopMicrophone();
+      stopAndClearAudioQueue('session teardown');
+      updateUIState('disconnected');
+    }
+
+    /* ============================================================
+       K. UI STATE MACHINE
+       ============================================================ */
+    function updateUIState(state) {
+      STATE.status = state;
+      DOM.statusBadge.className = `status-badge ${state}`;
+      DOM.voiceOrb.className = `orb-wrapper ${state}`;
+
+      switch (state) {
+        case 'disconnected':
+          DOM.statusText.textContent = 'Ready';
+          DOM.orbStateLabel.textContent = 'Tap to talk with Arushi';
+          DOM.orbIcon.className = 'fa-solid fa-microphone-lines';
+          DOM.btnMainMic.className = 'main-mic-fab';
+          DOM.micFabLabel.textContent = 'Start Voice';
+          DOM.btnBargeIn.classList.remove('visible');
+          break;
+
+        case 'connecting':
+          DOM.statusText.textContent = 'Connecting...';
+          DOM.orbStateLabel.textContent = 'Connecting to Gemini Live...';
+          DOM.orbIcon.className = 'fa-solid fa-spinner fa-spin';
+          DOM.micFabLabel.textContent = 'Connecting...';
+          break;
+
+        case 'listening':
+          DOM.statusText.textContent = 'Listening';
+          DOM.orbStateLabel.textContent = 'Arushi is listening...';
+          DOM.orbIcon.className = 'fa-solid fa-microphone';
+          DOM.btnMainMic.className = 'main-mic-fab active';
+          DOM.micFabLabel.textContent = 'End Voice';
+          DOM.btnBargeIn.classList.remove('visible');
+          break;
+
+        case 'thinking':
+          DOM.statusText.textContent = 'Thinking';
+          DOM.orbStateLabel.textContent = 'Arushi is thinking...';
+          DOM.orbIcon.className = 'fa-solid fa-brain';
+          DOM.btnMainMic.className = 'main-mic-fab active';
+          DOM.micFabLabel.textContent = 'End Voice';
+          break;
+
+        case 'speaking':
+          DOM.statusText.textContent = 'Speaking';
+          DOM.orbStateLabel.textContent = 'Arushi is speaking...';
+          DOM.orbIcon.className = 'fa-solid fa-waveform-lines';
+          DOM.btnMainMic.className = 'main-mic-fab active speaking';
+          DOM.micFabLabel.textContent = 'End Voice';
+          DOM.btnBargeIn.classList.add('visible');
+          break;
+
+        case 'executing':
+          DOM.statusText.textContent = 'Executing';
+          DOM.orbStateLabel.textContent = 'Executing safe action...';
+          DOM.orbIcon.className = 'fa-solid fa-gear fa-spin';
+          break;
+
+        case 'error':
+          DOM.statusText.textContent = 'Error';
+          DOM.orbStateLabel.textContent = 'Connection error. Tap to retry.';
+          DOM.orbIcon.className = 'fa-solid fa-triangle-exclamation';
+          DOM.btnMainMic.className = 'main-mic-fab';
+          DOM.micFabLabel.textContent = 'Retry Voice';
+          DOM.btnBargeIn.classList.remove('visible');
+          break;
+      }
+    }
+
+    /* ============================================================
+       L. USER INTERACTION & HANDLERS
+       ============================================================ */
+    DOM.btnMainMic.onclick = () => {
+      if (STATE.sessionActive) {
+        disconnectGeminiLive();
+      } else {
+        connectGeminiLive();
+      }
+    };
+
+    DOM.voiceOrb.onclick = () => {
+      if (STATE.sessionActive) {
+        if (STATE.isPlaying) {
+          stopAndClearAudioQueue('orb tap');
+        } else {
+          disconnectGeminiLive();
+        }
+      } else {
+        connectGeminiLive();
+      }
+    };
+
+    DOM.btnBargeIn.onclick = () => {
+      stopAndClearAudioQueue('manual barge-in button');
+    };
+
+    DOM.btnToggleKeyboard.onclick = () => {
+      const isVisible = DOM.textDrawer.classList.contains('active');
+      if (isVisible) {
+        DOM.textDrawer.classList.remove('active');
+      } else {
+        DOM.textDrawer.classList.add('active');
+        DOM.textPromptInput.focus();
+      }
+    };
+
+    DOM.btnSendText.onclick = () => {
+      submitTextPrompt();
+    };
+
+    DOM.textPromptInput.onkeydown = (e) => {
+      if (e.key === 'Enter') submitTextPrompt();
+    };
+
+    async function submitTextPrompt() {
+      const text = DOM.textPromptInput.value.trim();
+      if (!text) return;
+
+      DOM.userBubble.style.display = 'flex';
+      DOM.userText.textContent = text;
+      DOM.textPromptInput.value = '';
+      DOM.textDrawer.classList.remove('active');
+
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.executeFastCommand) {
+        try {
+          const fastResult = JSON.parse(bridge.executeFastCommand(text));
+          if (fastResult.handled) {
+            log(`Fast command handled: ${fastResult.action} - ${fastResult.details}`, 'tool');
+            DOM.arushiBubble.style.display = 'flex';
+            DOM.arushiText.textContent = fastResult.spokenReply || fastResult.details;
+            speakLocalResponse(fastResult.spokenReply);
+            showToolBanner(fastResult.action, { appName: fastResult.action });
+            updateToolBannerResult({ success: fastResult.success, message: fastResult.details });
+            updateUIState('speaking');
+            setTimeout(() => {
+              if (STATE.status === 'speaking') updateUIState('ready');
+            }, 2500);
+            return;
+          }
+        } catch (e) {
+          log('Fast command router check: ' + e.message);
+        }
+      }
+
+      if (!STATE.sessionActive) {
+        await connectGeminiLive();
+        setTimeout(() => sendTextMessage(text), 1200);
+      } else {
+        sendTextMessage(text);
+      }
+    }
+
+    function sendTextMessage(text) {
+      if (STATE.ws && STATE.ws.readyState === WebSocket.OPEN) {
+        const clientMsg = {
+          clientContent: {
+            turns: [
+              {
+                role: "user",
+                parts: [{ text: text }]
+              }
+            ],
+            turnComplete: true
+          }
+        };
+        STATE.ws.send(JSON.stringify(clientMsg));
+        log(`Sent text turn: "${text}"`, 'info');
+        updateUIState('thinking');
+      }
+    }
+
+    function triggerQuickPrompt(promptText) {
+      DOM.textPromptInput.value = promptText;
+      submitTextPrompt();
+    }
+
+    /* ============================================================
+       M. SHEETS & SETTINGS MANAGEMENT
+       ============================================================ */
+    function openSheet(sheetElement) {
+      DOM.sheetScrim.classList.add('visible');
+      sheetElement.classList.add('open');
+    }
+
+    function closeSheets() {
+      DOM.sheetScrim.classList.remove('visible');
+      document.querySelectorAll('.bottom-sheet').forEach(s => s.classList.remove('open'));
+    }
+
+    DOM.sheetScrim.onclick = closeSheets;
+    DOM.btnSettings.onclick = () => openSheet(DOM.settingsSheet);
+    DOM.btnDebug.onclick = () => openSheet(DOM.debugSheet);
+
+    function saveSettings() {
+      const key = DOM.apiKeyInput.value.trim();
+      if (key) {
+        STATE.apiKey = key;
+        localStorage.setItem('arushi_gemini_api_key', key);
+        log('Gemini API key saved in local storage.');
+      }
+      const theme = DOM.themeSelect.value;
+      document.body.setAttribute('data-theme', theme);
+      localStorage.setItem('arushi_theme', theme);
+      closeSheets();
+    }
+
+    // Apply saved theme
+    const savedTheme = localStorage.getItem('arushi_theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
+    DOM.themeSelect.value = savedTheme;
+
+    /* ============================================================
+       N. INITIALIZATION
+       ============================================================ */
+    window.addEventListener('DOMContentLoaded', () => {
+      detectPlatformCapabilities();
+      log('Arushi AI Assistant initialized and ready.');
+    });
+  </script>
+</body>
+</html>
