@@ -154,14 +154,30 @@ class MainActivity : ComponentActivity() {
 
         wv.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest) {
-                // Automatically grant web audio capture permission if granted on Android
                 val requestedResources = request.resources
                 val granted = mutableListOf<String>()
+                var needsAudioPermission = false
+
                 for (resource in requestedResources) {
                     if (resource == PermissionRequest.RESOURCE_AUDIO_CAPTURE) {
-                        granted.add(resource)
+                        val hasAudio = ContextCompat.checkSelfPermission(
+                            this@MainActivity,
+                            Manifest.permission.RECORD_AUDIO
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (hasAudio) {
+                            granted.add(resource)
+                        } else {
+                            needsAudioPermission = true
+                        }
                     }
                 }
+
+                if (needsAudioPermission) {
+                    runOnUiThread {
+                        requestPermissionLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
+                    }
+                }
+
                 if (granted.isNotEmpty()) {
                     request.grant(granted.toTypedArray())
                 } else {
@@ -535,6 +551,18 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun getWakeWordStatus(): Boolean {
             return ArushiForegroundService.isRunning
+        }
+
+        @JavascriptInterface
+        fun pauseWakeWord(): Boolean {
+            ArushiForegroundService.pauseListening()
+            return true
+        }
+
+        @JavascriptInterface
+        fun resumeWakeWord(): Boolean {
+            ArushiForegroundService.resumeListening()
+            return true
         }
 
         @JavascriptInterface

@@ -1970,6 +1970,11 @@
        H. MICROPHONE STREAMING (WITH ANTI-ECHO SELF-INTERRUPTION GUARD)
        ============================================================ */
     async function startMicrophone() {
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.pauseWakeWord) {
+        try { bridge.pauseWakeWord(); } catch(e) {}
+      }
+
       try {
         await initAudioEngine();
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -2045,7 +2050,12 @@
         return true;
       } catch (err) {
         log('Microphone access failed: ' + err.message, 'error');
-        alert('Microphone permission is required for voice conversation with Arushi. Please enable microphone permissions in your browser or Android settings.');
+        if (bridge?.requestAudioPermission) {
+          try { bridge.requestAudioPermission(); } catch(e) {}
+        }
+        if (bridge?.resumeWakeWord) {
+          try { bridge.resumeWakeWord(); } catch(e) {}
+        }
         updateUIState('error');
         return false;
       }
@@ -2059,6 +2069,10 @@
       if (STATE.micStream) {
         STATE.micStream.getTracks().forEach(t => t.stop());
         STATE.micStream = null;
+      }
+      const bridge = window.AndroidBridge || window.Android;
+      if (bridge?.resumeWakeWord) {
+        try { bridge.resumeWakeWord(); } catch(e) {}
       }
       log('Microphone stream closed.', 'audio');
     }

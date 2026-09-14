@@ -1,12 +1,15 @@
 package com.forevercs.arushiai
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
+import androidx.core.content.ContextCompat
 import java.util.Locale
 
 interface WakeWordListener {
@@ -42,23 +45,37 @@ class AndroidSpeechWakeWordEngine(private val context: Context) : WakeWordEngine
     private var speechRecognizer: SpeechRecognizer? = null
     private var isCurrentlyListening: Boolean = false
     private var callback: WakeWordListener? = null
+    private var consecutiveAudioErrors: Int = 0
 
     companion object {
         private const val TAG = "ArushiWakeWord"
         val WAKE_PHRASES = listOf("hello arushi", "hey arushi", "arushi", "હેલો આરુષી", "આરુષી")
+        private const val MAX_CONSECUTIVE_AUDIO_ERRORS = 3
     }
 
     override fun startListening(listener: WakeWordListener) {
         if (isCurrentlyListening) return
         this.callback = listener
 
+        val hasAudioPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!hasAudioPermission) {
+            Log.w(TAG, "Cannot start wake word engine: RECORD_AUDIO permission not granted.")
+            listener.onError("Microphone permission required for wake word detection.")
+            return
+        }
+
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             Log.w(TAG, "Speech recognition is not available on this device.")
-            listener.onError("Speech recognition not available.")
+            listener.onError("Speech recognition not available on this device.")
             return
         }
 
         try {
+            consecutiveAudioErrors = 0
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
                 setRecognitionListener(createListener())
             }
@@ -73,6 +90,19 @@ class AndroidSpeechWakeWordEngine(private val context: Context) : WakeWordEngine
     }
 
     private fun startRecognitionInternal() {
+        if (!isCurrentlyListening) return
+
+        val hasAudioPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!hasAudioPermission) {
+            Log.w(TAG, "Halting recognition: RECORD_AUDIO permission revoked or unavailable.")
+            stopListening()
+            return
+        }
+
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
@@ -88,7 +118,9 @@ class AndroidSpeechWakeWordEngine(private val context: Context) : WakeWordEngine
     }
 
     private fun createListener() = object : RecognitionListener {
-        override fun onReadyForSpeech(params: Bundle?) {}
+        override fun onReadyForSpeech(params: Bundle?) {
+            consecutiveAudioErrors = 0
+        }
         override fun onBeginningOfSpeech() {}
         override fun onRmsChanged(rmsdB: Float) {}
         override fun onBufferReceived(buffer: ByteArray?) {}
@@ -96,20 +128,54 @@ class AndroidSpeechWakeWordEngine(private val context: Context) : WakeWordEngine
 
         override fun onError(error: Int) {
             Log.d(TAG, "SpeechRecognizer error: $error")
-            // Restart listening if still active and error is not fatal
+
+            // Critical or fatal error handling:
+            when (error) {
+                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
+                    Log.w(TAG, "Microphone permission error ($error). Stopping wake word engine.")
+                    callback?.onError("Microphone permission required.")
+                    stopListening()
+                    return
+                }
+                SpeechRecognizer.ERROR_AUDIO -> {
+                    consecutiveAudioErrors++
+                    Log.w(TAG, "Audio recording hardware error ($error). Consecutive count: $consecutiveAudioErrors")
+                    if (consecutiveAudioErrors >= MAX_CONSECUTIVE_AUDIO_ERRORS) {
+                        Log.w(TAG, "Audio hardware repeatedly unavailable. Pausing wake word engine.")
+                        callback?.onError("Audio recording device unavailable.")
+                        stopListening()
+                        return
+                    }
+                }
+                SpeechRecognizer.ERROR_CLIENT -> {
+                    Log.w(TAG, "SpeechRecognizer client error ($error).")
+                }
+                else -> {
+                    // Recoverable errors (e.g., NO_MATCH, SPEECH_TIMEOUT)
+                    consecutiveAudioErrors = 0
+                }
+            }
+
+            // Restart listening if still active and not permanently stopped, with exponential delay
+            if (isCurrentlyListening) {
+                val delayMs = if (consecutiveAudioErrors > 0) 2500L else 800L
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    if (isCurrentlyListening) {
+                        startRecognitionInternal()
+                    }
+                }, delayMs)
+            }
+        }
+
+        override fun onResults(results: Bundle?) {
+            consecutiveAudioErrors = 0
+            handleSpeechMatches(results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION))
             if (isCurrentlyListening) {
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                     if (isCurrentlyListening) {
                         startRecognitionInternal()
                     }
-                }, 500)
-            }
-        }
-
-        override fun onResults(results: Bundle?) {
-            handleSpeechMatches(results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION))
-            if (isCurrentlyListening) {
-                startRecognitionInternal()
+                }, 400L)
             }
         }
 
@@ -142,6 +208,7 @@ class AndroidSpeechWakeWordEngine(private val context: Context) : WakeWordEngine
 
     override fun stopListening() {
         isCurrentlyListening = false
+        consecutiveAudioErrors = 0
         callback?.onListeningStateChanged(false)
         try {
             speechRecognizer?.stopListening()
@@ -150,7 +217,6 @@ class AndroidSpeechWakeWordEngine(private val context: Context) : WakeWordEngine
             Log.w(TAG, "Error stopping SpeechRecognizer", e)
         }
         speechRecognizer = null
-        callback = null
         Log.i(TAG, "Wake word engine stopped.")
     }
 

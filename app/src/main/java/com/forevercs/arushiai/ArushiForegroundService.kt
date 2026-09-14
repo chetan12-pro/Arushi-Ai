@@ -57,10 +57,19 @@ class ArushiForegroundService : Service(), WakeWordListener {
             startForeground(NOTIFICATION_ID, notification)
         }
 
-        // Initialize local wake word engine if not already active
-        if (wakeWordEngine == null) {
-            wakeWordEngine = AndroidSpeechWakeWordEngine(applicationContext)
+        // Initialize local wake word engine only if microphone permission is granted
+        val hasAudio = androidx.core.content.ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (hasAudio) {
+            if (wakeWordEngine == null) {
+                wakeWordEngine = AndroidSpeechWakeWordEngine(applicationContext)
+            }
             wakeWordEngine?.startListening(this)
+        } else {
+            Log.w(TAG, "RECORD_AUDIO permission not granted; wake word engine standby.")
         }
 
         isRunning = true
@@ -172,6 +181,35 @@ class ArushiForegroundService : Service(), WakeWordListener {
         fun stop(context: Context) {
             val intent = Intent(context, ArushiForegroundService::class.java)
             context.stopService(intent)
+        }
+
+        fun pauseListening() {
+            try {
+                instance?.wakeWordEngine?.stopListening()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error pausing wake word engine", e)
+            }
+        }
+
+        fun resumeListening() {
+            try {
+                instance?.let { service ->
+                    val hasAudio = androidx.core.content.ContextCompat.checkSelfPermission(
+                        service,
+                        android.Manifest.permission.RECORD_AUDIO
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    if (hasAudio) {
+                        if (service.wakeWordEngine == null) {
+                            service.wakeWordEngine = AndroidSpeechWakeWordEngine(service.applicationContext)
+                        }
+                        if (service.wakeWordEngine?.isListening() == false) {
+                            service.wakeWordEngine?.startListening(service)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error resuming wake word engine", e)
+            }
         }
     }
 }
