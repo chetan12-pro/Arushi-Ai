@@ -62,7 +62,9 @@ android {
 }
 
 kotlin {
-  jvmToolchain(17)
+  compilerOptions {
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+  }
 }
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
